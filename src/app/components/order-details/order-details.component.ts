@@ -2,6 +2,7 @@ import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, Router } from "@angular/router";
 import { DataService } from "../../services/data.service";
+import { GoogleDriveService } from "../../services/google-drive.service";
 import { Order } from "../../models/order.model";
 
 @Component({
@@ -18,7 +19,8 @@ export class OrderDetailsComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private dataService: DataService
+    private dataService: DataService,
+    private googleDrive: GoogleDriveService
   ) {}
 
   ngOnInit(): void {
@@ -81,5 +83,10 @@ export class OrderDetailsComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(["/orders"]);
+  }
+
+  getImageUrl(imageValue: string | undefined): string {
+    if (!imageValue) return "";
+    return this.googleDrive.getImageUrl(imageValue);
   }
 }

@@ -55,7 +55,7 @@
 
       <div class="order-image" *ngIf="order.deliveredImage || order.cakeImage">
         <img
-          [src]="order.deliveredImage || order.cakeImage"
+          [src]="getImageUrl(order.deliveredImage || order.cakeImage)"
           [alt]="order.cakeType"
         />
         <div class="image-label" *ngIf="order.deliveredImage">

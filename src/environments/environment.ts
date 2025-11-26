@@ -6,4 +6,8 @@ export const environment = {
     appsScriptUrl:
       "https://script.google.com/macros/s/AKfycbycVeTWgCxtopatiGl7Bkr2sMRyjSTq6496qdF0GvLDjLh6naTUGZD3Mk8EKQX_Vd1c/exec",
   },
+  googleDrive: {
+    enabled: true, // Set to true to enable Google Drive image storage
+    folderId: "1nXIOsYrbi0NL8GlrZQLWhHAtJL7U_83R", // Your Google Drive folder ID (get from folder URL)
+  },
 };

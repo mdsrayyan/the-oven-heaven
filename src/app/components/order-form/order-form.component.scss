@@ -10,7 +10,7 @@
   border: 1px solid var(--border-color);
 
   @media (min-width: 768px) {
-    padding: 2rem;
+  padding: 2rem;
   }
 
   h2 {
@@ -22,7 +22,7 @@
 
     @media (min-width: 768px) {
       margin-bottom: 3rem;
-      font-size: 2rem;
+    font-size: 2rem;
     }
   }
 }
@@ -34,7 +34,7 @@
 
   @media (min-width: 768px) {
     margin-bottom: 3rem;
-    padding-bottom: 2rem;
+  padding-bottom: 2rem;
   }
 
   &:last-of-type {
@@ -51,7 +51,7 @@
 
     @media (min-width: 768px) {
       margin-bottom: 2rem;
-      font-size: 1.25rem;
+    font-size: 1.25rem;
     }
   }
 }
@@ -266,7 +266,7 @@
 
   @media (min-width: 768px) {
     margin-top: 3rem;
-    padding-top: 2rem;
+  padding-top: 2rem;
   }
 
   .btn {

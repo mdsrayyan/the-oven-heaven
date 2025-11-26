@@ -13,7 +13,7 @@ export class AppComponent implements OnInit {
 
   constructor(private dataService: DataService) {
     this.loading$ = this.dataService.loading$;
-  }
+}
 
   ngOnInit(): void {}
 }

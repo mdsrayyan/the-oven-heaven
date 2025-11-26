@@ -23,6 +23,12 @@ function doPost(e) {
       throw new Error('Unsupported request type');
     }
     
+    // Handle Google Drive image upload
+    if (requestData.action === 'uploadImage') {
+      return handleImageUpload(requestData);
+    }
+    
+    // Handle Google Sheets sync (existing functionality)
     const spreadsheetId = requestData.spreadsheetId;
     const sheetName = requestData.sheetName;
     const values = requestData.values;
@@ -52,6 +58,45 @@ function doPost(e) {
     return ContentService.createTextOutput(JSON.stringify({ 
       success: false, 
       error: error.toString() 
+    }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function handleImageUpload(requestData) {
+  try {
+    const folderId = requestData.folderId;
+    const fileName = requestData.fileName;
+    const imageData = requestData.imageData; // Base64 string (without data URL prefix)
+    const mimeType = requestData.mimeType || 'image/jpeg';
+    
+    // Get the folder
+    const folder = DriveApp.getFolderById(folderId);
+    
+    // Convert base64 to blob
+    const blob = Utilities.newBlob(
+      Utilities.base64Decode(imageData),
+      mimeType,
+      fileName
+    );
+    
+    // Upload to Drive
+    const file = folder.createFile(blob);
+    
+    // Make file publicly viewable (required for direct image URLs)
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    // Return file ID
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      fileId: file.getId(),
+      fileUrl: `https://drive.google.com/uc?export=view&id=${file.getId()}`
+    }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: error.toString()
     }))
       .setMimeType(ContentService.MimeType.JSON);
   }

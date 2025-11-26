@@ -105,10 +105,12 @@ export class GoogleSheetsSyncService {
       console.log("📥 Fetching data from Google Sheets...");
 
       // Don't include Content-Type header for GET requests to avoid CORS preflight
-      const url = `${this.config.appsScriptUrl}?action=fetch&spreadsheetId=${encodeURIComponent(
+      const url = `${
+        this.config.appsScriptUrl
+      }?action=fetch&spreadsheetId=${encodeURIComponent(
         this.config.spreadsheetId
       )}`;
-      
+
       const response = await fetch(url, {
         method: "GET",
         // No custom headers to avoid CORS preflight
@@ -178,12 +180,26 @@ export class GoogleSheetsSyncService {
                 order.otherDetails = value || undefined;
                 break;
               case "cakeImage":
-                // Image stored as base64 string
-                order.cakeImage = value && value !== "No" && value !== "Yes" ? value : undefined;
+                // Store compressed base64 image (if not empty and not "Yes"/"No")
+                if (
+                  value &&
+                  value !== "No" &&
+                  value !== "Yes" &&
+                  value.length > 0
+                ) {
+                  order.cakeImage = value;
+                }
                 break;
               case "deliveredImage":
-                // Delivered image stored as base64 string
-                order.deliveredImage = value && value !== "No" && value !== "Yes" ? value : undefined;
+                // Store compressed base64 image (if not empty and not "Yes"/"No")
+                if (
+                  value &&
+                  value !== "No" &&
+                  value !== "Yes" &&
+                  value.length > 0
+                ) {
+                  order.deliveredImage = value;
+                }
                 break;
               case "hasDelivery":
                 order.hasDelivery = value === "true";
@@ -392,11 +408,11 @@ export class GoogleSheetsSyncService {
     const oldOrder = order as any;
     const dueDate = order.dueDate || oldOrder.deliveryDate || "";
 
-    // Store base64 images - truncate if too long for Google Sheets (50k char limit)
+    // Store compressed base64 images (compressed to fit Google Sheets 50k limit)
     const cakeImage = order.cakeImage || "";
     const deliveredImage = order.deliveredImage || "";
-    const maxImageLength = 45000; // Leave some buffer under 50k limit
-    
+    const maxLength = 45000; // Leave buffer under 50k limit
+
     return [
       order.id || "",
       order.customerName || "",
@@ -408,8 +424,12 @@ export class GoogleSheetsSyncService {
       String(deliveryCharge),
       String(grandTotal),
       order.otherDetails || "",
-      cakeImage.length > maxImageLength ? cakeImage.substring(0, maxImageLength) : cakeImage,
-      deliveredImage.length > maxImageLength ? deliveredImage.substring(0, maxImageLength) : deliveredImage,
+      cakeImage.length > maxLength
+        ? cakeImage.substring(0, maxLength)
+        : cakeImage,
+      deliveredImage.length > maxLength
+        ? deliveredImage.substring(0, maxLength)
+        : deliveredImage,
       String(order.hasDelivery || false),
       order.deliveryAddress || "",
       dueDate,

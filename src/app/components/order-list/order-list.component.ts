@@ -1,6 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import { DataService } from "../../services/data.service";
+import { GoogleDriveService } from "../../services/google-drive.service";
 import { Order } from "../../models/order.model";
 
 @Component({
@@ -15,7 +16,11 @@ export class OrderListComponent implements OnInit {
   statusFilter = "all";
   sortBy = "date-desc";
 
-  constructor(private dataService: DataService, private router: Router) {}
+  constructor(
+    private dataService: DataService,
+    private router: Router,
+    private googleDrive: GoogleDriveService
+  ) {}
 
   ngOnInit(): void {
     this.dataService.orders$.subscribe((orders) => {
@@ -125,5 +130,10 @@ export class OrderListComponent implements OnInit {
       month: "short",
       day: "numeric",
     });
+  }
+
+  getImageUrl(imageValue: string | undefined): string {
+    if (!imageValue) return "";
+    return this.googleDrive.getImageUrl(imageValue);
   }
 }

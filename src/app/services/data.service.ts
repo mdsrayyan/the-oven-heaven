@@ -77,14 +77,20 @@ export class DataService {
             expenses: fetchedData.expenses.length,
           });
 
+          // Images are now stored in Google Sheets (compressed), so use fetched data directly
+          // Merge with localStorage only if Google Sheets images are missing
+          const ordersWithImages = this.mergeImagesIfMissing(
+            fetchedData.orders
+          );
+
           // Update subjects with fetched data
-          this.ordersSubject.next(fetchedData.orders);
+          this.ordersSubject.next(ordersWithImages);
           this.customersSubject.next(fetchedData.customers);
           this.expensesSubject.next(fetchedData.expenses);
 
-          // Save to localStorage as backup
+          // Save to localStorage (including images)
           this.saveToLocalStorage(
-            fetchedData.orders,
+            ordersWithImages,
             fetchedData.customers,
             fetchedData.expenses
           );
@@ -145,6 +151,34 @@ export class DataService {
     localStorage.setItem(this.ordersKey, JSON.stringify(orders));
     localStorage.setItem(this.customersKey, JSON.stringify(customers));
     localStorage.setItem(this.expensesKey, JSON.stringify(expenses));
+  }
+
+  /**
+   * Merge images from localStorage only if they're missing from Google Sheets
+   * This ensures images sync across devices while preserving local images as fallback
+   */
+  private mergeImagesIfMissing(orders: Order[]): Order[] {
+    // Get local orders with images
+    const localOrders = this.getOrdersFromStorage();
+    const localOrdersMap = new Map<string, Order>();
+
+    localOrders.forEach((order) => {
+      localOrdersMap.set(order.id, order);
+    });
+
+    // Merge images from local storage only if Google Sheets doesn't have them
+    return orders.map((order) => {
+      const localOrder = localOrdersMap.get(order.id);
+      if (localOrder) {
+        // Use Google Sheets image if available, otherwise use local storage
+        return {
+          ...order,
+          cakeImage: order.cakeImage || localOrder.cakeImage,
+          deliveredImage: order.deliveredImage || localOrder.deliveredImage,
+        };
+      }
+      return order;
+    });
   }
 
   private saveAllData(): void {

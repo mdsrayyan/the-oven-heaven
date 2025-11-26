@@ -2,6 +2,9 @@ import { Component, OnInit } from "@angular/core";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { DataService } from "../../services/data.service";
+import { ImageCompressionService } from "../../services/image-compression.service";
+import { GoogleDriveService } from "../../services/google-drive.service";
+import { environment } from "../../../environments/environment";
 import { Order } from "../../models/order.model";
 
 @Component({
@@ -20,7 +23,9 @@ export class OrderFormComponent implements OnInit {
     private fb: FormBuilder,
     private dataService: DataService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private imageCompression: ImageCompressionService,
+    private googleDrive: GoogleDriveService
   ) {
     this.orderForm = this.fb.group({
       customerName: ["", Validators.required],
@@ -43,6 +48,18 @@ export class OrderFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Initialize Google Drive if enabled
+    if (
+      environment.googleDrive?.enabled &&
+      environment.googleDrive?.folderId &&
+      environment.googleSheets?.appsScriptUrl
+    ) {
+      this.googleDrive.initialize({
+        appsScriptUrl: environment.googleSheets.appsScriptUrl,
+        folderId: environment.googleDrive.folderId,
+      });
+    }
+
     this.route.params.subscribe((params) => {
       if (params["id"]) {
         this.isEditMode = true;
@@ -106,27 +123,80 @@ export class OrderFormComponent implements OnInit {
     }
   }
 
-  onImageSelected(event: Event): void {
+  async onImageSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.imagePreview = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Compress image first
+        const compressedBase64 = await this.imageCompression.compressImage(
+          file,
+          800,
+          800,
+          0.7
+        );
+        console.log("✅ Image compressed successfully");
+
+        // Show preview immediately
+        this.imagePreview = compressedBase64;
+
+        // Upload to Google Drive if enabled
+        if (
+          environment.googleDrive?.enabled &&
+          environment.googleDrive?.folderId &&
+          this.googleDrive.isInitialized()
+        ) {
+          try {
+            const fileName = `order_${Date.now()}_reference.jpg`;
+            const driveFileId = await this.googleDrive.uploadImage(
+              compressedBase64,
+              fileName
+            );
+            // Store Drive file ID instead of base64
+            this.imagePreview = driveFileId;
+            console.log("✅ Image uploaded to Google Drive:", driveFileId);
+          } catch (driveError) {
+            console.warn(
+              "⚠️ Failed to upload to Drive, using base64:",
+              driveError
+            );
+            // Keep base64 as fallback
+          }
+        }
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        // Fallback to original if compression fails
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.imagePreview = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+      }
     }
   }
 
-  onDeliveredImageSelected(event: Event): void {
+  async onDeliveredImageSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.deliveredImagePreview = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Compress image before storing
+        this.deliveredImagePreview = await this.imageCompression.compressImage(
+          file,
+          800,
+          800,
+          0.7
+        );
+        console.log("✅ Delivered image compressed successfully");
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        // Fallback to original if compression fails
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.deliveredImagePreview = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+      }
     }
   }
 
