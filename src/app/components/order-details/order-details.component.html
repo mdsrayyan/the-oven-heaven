@@ -1,0 +1,132 @@
+<div class="order-details-container" *ngIf="order; else notFound">
+  <div class="details-header">
+    <button class="btn-back" (click)="goBack()">← Back</button>
+    <div class="header-actions">
+      <button class="btn-edit" (click)="editOrder()">Edit Order</button>
+    </div>
+  </div>
+
+  <div class="details-card" *ngIf="order">
+    <div class="order-header-section">
+      <div class="customer-info">
+        <h1>{{ order.customerName }}</h1>
+        <p class="phone" *ngIf="order.customerPhone">
+          {{ order.customerPhone }}
+        </p>
+      </div>
+      <span class="status-badge" [ngClass]="getStatusClass(order.status)">
+        {{ getStatusLabel(order.status) }}
+      </span>
+    </div>
+
+    <div
+      class="order-image-section"
+      *ngIf="order.deliveredImage || order.cakeImage"
+    >
+      <div class="image-container">
+        <img
+          [src]="order.deliveredImage || order.cakeImage"
+          [alt]="order.cakeType"
+        />
+        <div class="image-label" *ngIf="order.deliveredImage">
+          <span class="delivered-badge">Delivered</span>
+        </div>
+        <div
+          class="image-label"
+          *ngIf="!order.deliveredImage && order.cakeImage"
+        >
+          <span class="reference-badge">Reference</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="details-grid">
+      <div class="detail-section">
+        <h3>Order Information</h3>
+        <div class="detail-item">
+          <span class="label">Order Date:</span>
+          <span class="value">{{ formatDate(order.orderDate) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Due Date:</span>
+          <span class="value">{{ formatDate(order.dueDate) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Status:</span>
+          <span
+            class="value status-value"
+            [ngClass]="getStatusClass(order.status)"
+          >
+            {{ getStatusLabel(order.status) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Cake Details</h3>
+        <div class="detail-item">
+          <span class="label">Cake Type:</span>
+          <span class="value">{{ order.cakeType }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Quantity:</span>
+          <span class="value">{{ order.quantity }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Type:</span>
+          <span
+            class="value type-badge"
+            [ngClass]="order.isEggless ? 'eggless' : 'with-egg'"
+          >
+            {{ order.isEggless ? "Eggless" : "With Egg" }}
+          </span>
+        </div>
+        <div class="detail-item" *ngIf="order.otherDetails">
+          <span class="label">Notes:</span>
+          <span class="value">{{ order.otherDetails }}</span>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Pricing</h3>
+        <div class="detail-item">
+          <span class="label">Cake Price:</span>
+          <span class="value">₹{{ order.price.toFixed(2) }}</span>
+        </div>
+        <div class="detail-item" *ngIf="(order.additionalCharges || 0) > 0">
+          <span class="label">Additional Charges:</span>
+          <span class="value"
+            >₹{{ (order.additionalCharges || 0).toFixed(2) }}</span
+          >
+        </div>
+        <div
+          class="detail-item"
+          *ngIf="order.hasDelivery && order.deliveryCharge"
+        >
+          <span class="label">Delivery Charge:</span>
+          <span class="value">₹{{ order.deliveryCharge.toFixed(2) }}</span>
+        </div>
+        <div class="detail-item grand-total">
+          <span class="label">Grand Total:</span>
+          <span class="value">₹{{ getGrandTotal().toFixed(2) }}</span>
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="order.hasDelivery">
+        <h3>Delivery Information</h3>
+        <div class="detail-item">
+          <span class="label">Delivery Address:</span>
+          <span class="value">{{ order.deliveryAddress }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #notFound>
+  <div class="not-found">
+    <h2>Order Not Found</h2>
+    <p>The order you're looking for doesn't exist.</p>
+    <button class="btn-back" (click)="goBack()">← Back to Orders</button>
+  </div>
+</ng-template>

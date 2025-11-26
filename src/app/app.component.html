@@ -1,0 +1,17 @@
+<div class="app-container">
+  <nav class="navbar">
+    <div class="nav-content">
+      <h1 class="logo">The Oven Heaven</h1>
+      <div class="nav-links">
+        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+        <a routerLink="/orders" routerLinkActive="active">Orders</a>
+        <a routerLink="/orders/new" routerLinkActive="active" class="btn-new"
+          >+ New Order</a
+        >
+      </div>
+    </div>
+  </nav>
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

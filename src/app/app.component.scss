@@ -1,0 +1,136 @@
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar {
+  background: var(--bg-white);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  margin-bottom: 0;
+
+  @media (min-width: 768px) {
+    padding: 1.5rem 2rem;
+  }
+
+  .nav-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  .logo {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+    letter-spacing: 0;
+    white-space: nowrap;
+    padding: 0.25rem 0;
+
+    @media (min-width: 768px) {
+      font-size: 1.5rem;
+      padding: 0;
+    }
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+
+    @media (min-width: 768px) {
+      gap: 0.75rem;
+      flex-wrap: nowrap;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    a {
+      text-decoration: none;
+      color: var(--text-medium);
+      font-weight: 400;
+      padding: 0.625rem 0.875rem;
+      border-radius: 0;
+      transition: all 0.2s ease;
+      font-size: 0.85rem;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      flex: 1;
+      text-align: center;
+      margin: 0;
+
+      @media (min-width: 768px) {
+        flex: none;
+        text-align: left;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.95rem;
+        margin: 0;
+      }
+
+      &:hover {
+        color: var(--text-dark);
+        border-bottom-color: var(--border-color);
+      }
+
+      &.active {
+        color: var(--text-dark);
+        border-bottom-color: var(--primary-color);
+        font-weight: 500;
+      }
+
+      &.btn-new {
+        background: var(--primary-color);
+        color: white;
+        font-weight: 500;
+        border-bottom: none;
+        padding: 0.625rem 1rem;
+        flex: 1;
+
+        @media (min-width: 768px) {
+          flex: none;
+          padding: 0.75rem 1.5rem;
+        }
+
+        &:hover {
+          background: var(--primary-hover);
+          border-bottom-color: transparent;
+        }
+      }
+    }
+  }
+}
+
+.main-content {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0.75rem;
+
+  @media (min-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}

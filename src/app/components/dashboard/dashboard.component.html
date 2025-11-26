@@ -1,0 +1,169 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>Dashboard</h1>
+    <div class="data-actions">
+      <button
+        class="btn-test-sync"
+        (click)="testSync()"
+        title="Test Google Sheets sync"
+      >
+        🔄 Test Sync
+      </button>
+    </div>
+  </div>
+
+  <div class="month-selector">
+    <select
+      [(ngModel)]="selectedMonth"
+      (change)="onMonthYearChange()"
+      class="select-control"
+    >
+      <option *ngFor="let month of months; let i = index" [value]="i">
+        {{ month }}
+      </option>
+    </select>
+    <select
+      [(ngModel)]="selectedYear"
+      (change)="onMonthYearChange()"
+      class="select-control"
+    >
+      <option *ngFor="let year of years" [value]="year">
+        {{ year }}
+      </option>
+    </select>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card revenue">
+      <div class="stat-content">
+        <h3>Monthly Revenue</h3>
+        <p class="stat-value">{{ formatCurrency(monthlyRevenue) }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card orders">
+      <div class="stat-content">
+        <h3>Total Orders</h3>
+        <p class="stat-value">{{ monthlyOrders }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card customers">
+      <div class="stat-content">
+        <h3>New Customers</h3>
+        <p class="stat-value">{{ newCustomers }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card eggless">
+      <div class="stat-content">
+        <h3>Eggless Orders</h3>
+        <p class="stat-value">{{ monthlyEggless }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card expenses">
+      <div class="stat-content">
+        <h3>Monthly Expenses</h3>
+        <p class="stat-value">{{ formatCurrency(monthlyExpenses) }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card profit" [ngClass]="{ negative: netProfit < 0 }">
+      <div class="stat-content">
+        <h3>Net Profit</h3>
+        <p class="stat-value">{{ formatCurrency(netProfit) }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="upcoming-orders-section">
+    <div class="section-header">
+      <h2>Upcoming Orders</h2>
+    </div>
+
+    <div
+      class="upcoming-orders-list"
+      *ngIf="upcomingOrders.length > 0; else noUpcomingOrders"
+    >
+      <div
+        class="upcoming-order-item"
+        *ngFor="let order of upcomingOrders"
+        (click)="viewOrder(order.id)"
+        style="cursor: pointer"
+      >
+        <div class="order-summary-info">
+          <h4>{{ order.customerName }}</h4>
+          <p class="order-cake">{{ order.cakeType }}</p>
+          <p class="order-due-date">Due: {{ formatDate(order.dueDate) }}</p>
+        </div>
+        <div class="order-summary-amount">
+          <p class="order-total">
+            ₹{{
+              (
+                order.price +
+                (order.additionalCharges || 0) +
+                (order.deliveryCharge || 0)
+              ).toFixed(2)
+            }}
+          </p>
+          <span class="status-badge-small" [ngClass]="'status-' + order.status">
+            {{
+              order.status === "pending"
+                ? "Pending"
+                : order.status === "in-progress"
+                ? "In Progress"
+                : order.status === "ready"
+                ? "Ready"
+                : "Delivered"
+            }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noUpcomingOrders>
+      <div class="empty-upcoming">
+        <p>No upcoming orders.</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <div class="expenses-section">
+    <div class="section-header">
+      <h2>Monthly Expenses</h2>
+      <button
+        class="btn-add-expense"
+        (click)="showExpenseForm = !showExpenseForm"
+      >
+        + Add Expense
+      </button>
+    </div>
+
+    <app-expense-form
+      *ngIf="showExpenseForm"
+      [month]="selectedMonth"
+      [year]="selectedYear"
+      (saved)="showExpenseForm = false; loadData()"
+    ></app-expense-form>
+
+    <div class="expenses-list" *ngIf="expenses.length > 0; else noExpenses">
+      <div class="expense-item" *ngFor="let expense of expenses">
+        <div class="expense-info">
+          <h4>{{ expense.description }}</h4>
+          <p class="expense-category">{{ expense.category }}</p>
+          <p class="expense-date">{{ expense.date | date : "shortDate" }}</p>
+        </div>
+        <div class="expense-amount">
+          {{ formatCurrency(expense.amount) }}
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noExpenses>
+      <div class="empty-expenses">
+        <p>No expenses recorded for this month.</p>
+      </div>
+    </ng-template>
+  </div>
+</div>

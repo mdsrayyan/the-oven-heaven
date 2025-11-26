@@ -1,0 +1,57 @@
+<div class="expense-form-container">
+  <form [formGroup]="expenseForm" (ngSubmit)="onSubmit()" class="expense-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Description *</label>
+        <input type="text" formControlName="description" class="form-control"
+               placeholder="e.g., Flour, Sugar, Boxes"
+               [class.invalid]="expenseForm.get('description')?.invalid && expenseForm.get('description')?.touched">
+        <small class="error" *ngIf="expenseForm.get('description')?.invalid && expenseForm.get('description')?.touched">
+          Description is required
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>Amount (₹) *</label>
+        <input type="number" formControlName="amount" class="form-control" min="0.01" step="0.01"
+               [class.invalid]="expenseForm.get('amount')?.invalid && expenseForm.get('amount')?.touched">
+        <small class="error" *ngIf="expenseForm.get('amount')?.invalid && expenseForm.get('amount')?.touched">
+          Valid amount is required
+        </small>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Category *</label>
+        <select formControlName="category" class="form-control"
+                [class.invalid]="expenseForm.get('category')?.invalid && expenseForm.get('category')?.touched">
+          <option value="">Select Category</option>
+          <option *ngFor="let category of categories" [value]="category">
+            {{ category }}
+          </option>
+        </select>
+        <small class="error" *ngIf="expenseForm.get('category')?.invalid && expenseForm.get('category')?.touched">
+          Category is required
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" formControlName="date" class="form-control"
+               [class.invalid]="expenseForm.get('date')?.invalid && expenseForm.get('date')?.touched">
+        <small class="error" *ngIf="expenseForm.get('date')?.invalid && expenseForm.get('date')?.touched">
+          Date is required
+        </small>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="expenseForm.invalid">
+        Add Expense
+      </button>
+    </div>
+  </form>
+</div>
+

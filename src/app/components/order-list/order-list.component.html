@@ -1,0 +1,155 @@
+<div class="order-list-container">
+  <div class="header-section">
+    <h1>Orders</h1>
+    <button class="btn-new-order" routerLink="/orders/new">+ New Order</button>
+  </div>
+
+  <div class="filters-section">
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="applyFilters()"
+        placeholder="Search by customer name, cake type, or phone..."
+        class="search-input"
+      />
+    </div>
+    <div class="filter-controls">
+      <select
+        [(ngModel)]="statusFilter"
+        (change)="applyFilters()"
+        class="filter-select"
+      >
+        <option value="all">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="in-progress">In Progress</option>
+        <option value="ready">Ready</option>
+        <option value="delivered">Delivered</option>
+      </select>
+      <select
+        [(ngModel)]="sortBy"
+        (change)="applyFilters()"
+        class="filter-select"
+      >
+        <option value="date-desc">Newest First</option>
+        <option value="date-asc">Oldest First</option>
+        <option value="price-desc">Highest Price</option>
+        <option value="price-asc">Lowest Price</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="orders-grid" *ngIf="filteredOrders.length > 0; else noOrders">
+    <div class="order-card" *ngFor="let order of filteredOrders">
+      <div class="order-header">
+        <div class="order-info">
+          <h3>{{ order.customerName }}</h3>
+          <p class="phone" *ngIf="order.customerPhone">
+            {{ order.customerPhone }}
+          </p>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusClass(order.status)">
+          {{ getStatusLabel(order.status) }}
+        </span>
+      </div>
+
+      <div class="order-image" *ngIf="order.deliveredImage || order.cakeImage">
+        <img
+          [src]="order.deliveredImage || order.cakeImage"
+          [alt]="order.cakeType"
+        />
+        <div class="image-label" *ngIf="order.deliveredImage">
+          <span class="delivered-badge">Delivered</span>
+        </div>
+      </div>
+
+      <div class="order-details">
+        <div class="detail-row">
+          <span class="label">Cake:</span>
+          <span class="value">{{ order.cakeType }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Quantity:</span>
+          <span class="value">{{ order.quantity }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Due Date:</span>
+          <span class="value">{{ formatDate(order.dueDate) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Cake Price:</span>
+          <span class="value">₹{{ order.price.toFixed(2) }}</span>
+        </div>
+        <div class="detail-row" *ngIf="(order.additionalCharges || 0) > 0">
+          <span class="label">Additional Charges:</span>
+          <span class="value"
+            >₹{{ (order.additionalCharges || 0).toFixed(2) }}</span
+          >
+        </div>
+        <div
+          class="detail-row"
+          *ngIf="order.hasDelivery && order.deliveryCharge"
+        >
+          <span class="label">Delivery:</span>
+          <span class="value">₹{{ order.deliveryCharge.toFixed(2) }}</span>
+        </div>
+        <div class="detail-row grand-total-row">
+          <span class="label">Grand Total:</span>
+          <span class="value price grand-total"
+            >₹{{
+              (
+                order.price +
+                (order.additionalCharges || 0) +
+                (order.deliveryCharge || 0)
+              ).toFixed(2)
+            }}</span
+          >
+        </div>
+        <div class="detail-row">
+          <span class="label">Type:</span>
+          <span
+            class="value type-badge"
+            [ngClass]="order.isEggless ? 'eggless' : 'with-egg'"
+            >{{ order.isEggless ? "Eggless" : "With Egg" }}</span
+          >
+        </div>
+        <div class="detail-row" *ngIf="order.otherDetails">
+          <span class="label">Notes:</span>
+          <span class="value">{{ order.otherDetails }}</span>
+        </div>
+      </div>
+
+      <div class="order-status-controls">
+        <select
+          [value]="order.status"
+          (change)="updateStatus(order, $any($event.target).value)"
+          class="status-select"
+        >
+          <option value="pending">Pending</option>
+          <option value="in-progress">In Progress</option>
+          <option value="ready">Ready</option>
+          <option value="delivered">Delivered</option>
+        </select>
+      </div>
+
+      <div class="order-actions">
+        <button class="btn-view-details" (click)="viewOrder(order.id)">
+          More
+        </button>
+        <button class="btn-edit" (click)="editOrder(order.id)">Edit</button>
+        <button class="btn-delete" (click)="deleteOrder(order.id)">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noOrders>
+    <div class="empty-state">
+      <p>No orders found. Create your first order!</p>
+      <button class="btn-new-order" routerLink="/orders/new">
+        + New Order
+      </button>
+    </div>
+  </ng-template>
+</div>

@@ -1,0 +1,389 @@
+<div class="order-form-container">
+  <div class="form-card">
+    <h2>{{ isEditMode ? "Edit Order" : "New Order" }}</h2>
+
+    <form [formGroup]="orderForm" (ngSubmit)="onSubmit()">
+      <!-- Customer Information -->
+      <div class="form-section">
+        <h3>Customer Information</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Customer Name *</label>
+            <input
+              type="text"
+              formControlName="customerName"
+              class="form-control"
+              [class.invalid]="
+                orderForm.get('customerName')?.invalid &&
+                orderForm.get('customerName')?.touched
+              "
+            />
+            <small
+              class="error"
+              *ngIf="
+                orderForm.get('customerName')?.invalid &&
+                orderForm.get('customerName')?.touched
+              "
+            >
+              Customer name is required
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input
+              type="tel"
+              formControlName="customerPhone"
+              class="form-control"
+              placeholder="10 digits (optional)"
+              [class.invalid]="
+                orderForm.get('customerPhone')?.invalid &&
+                orderForm.get('customerPhone')?.touched
+              "
+            />
+            <small
+              class="error"
+              *ngIf="
+                orderForm.get('customerPhone')?.invalid &&
+                orderForm.get('customerPhone')?.touched
+              "
+            >
+              If provided, must be a valid 10-digit phone number
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Details -->
+      <div class="form-section">
+        <h3>Order Details</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Cake Type *</label>
+            <input
+              type="text"
+              formControlName="cakeType"
+              class="form-control"
+              placeholder="e.g., Chocolate Cake, Vanilla Cake"
+              [class.invalid]="
+                orderForm.get('cakeType')?.invalid &&
+                orderForm.get('cakeType')?.touched
+              "
+            />
+            <small
+              class="error"
+              *ngIf="
+                orderForm.get('cakeType')?.invalid &&
+                orderForm.get('cakeType')?.touched
+              "
+            >
+              Cake type is required
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Quantity *</label>
+            <input
+              type="number"
+              formControlName="quantity"
+              class="form-control"
+              min="1"
+              [class.invalid]="
+                orderForm.get('quantity')?.invalid &&
+                orderForm.get('quantity')?.touched
+              "
+            />
+            <small
+              class="error"
+              *ngIf="
+                orderForm.get('quantity')?.invalid &&
+                orderForm.get('quantity')?.touched
+              "
+            >
+              Quantity must be at least 1
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Cake Price (₹) *</label>
+            <input
+              type="number"
+              formControlName="price"
+              class="form-control"
+              min="0"
+              step="0.01"
+              [class.invalid]="
+                orderForm.get('price')?.invalid &&
+                orderForm.get('price')?.touched
+              "
+            />
+            <small
+              class="error"
+              *ngIf="
+                orderForm.get('price')?.invalid &&
+                orderForm.get('price')?.touched
+              "
+            >
+              Valid price is required
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Additional Charges (₹) *</label>
+            <input
+              type="number"
+              formControlName="additionalCharges"
+              class="form-control"
+              min="0"
+              step="0.01"
+              placeholder="Candles, toppers, middle stand, etc."
+              [class.invalid]="
+                orderForm.get('additionalCharges')?.invalid &&
+                orderForm.get('additionalCharges')?.touched
+              "
+            />
+            <small
+              class="error"
+              *ngIf="
+                orderForm.get('additionalCharges')?.invalid &&
+                orderForm.get('additionalCharges')?.touched
+              "
+            >
+              Valid amount is required (use 0 if none)
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Due Date *</label>
+            <input
+              type="date"
+              formControlName="dueDate"
+              class="form-control"
+              [class.invalid]="
+                orderForm.get('dueDate')?.invalid &&
+                orderForm.get('dueDate')?.touched
+              "
+            />
+            <small
+              class="error"
+              *ngIf="
+                orderForm.get('dueDate')?.invalid &&
+                orderForm.get('dueDate')?.touched
+              "
+            >
+              Due date is required
+            </small>
+          </div>
+
+          <div class="form-group full-width">
+            <label>
+              <input
+                type="checkbox"
+                formControlName="isEggless"
+                class="checkbox"
+              />
+              Eggless Cake
+            </label>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Other Details</label>
+            <textarea
+              formControlName="otherDetails"
+              class="form-control"
+              rows="3"
+              placeholder="Special instructions, flavors, decorations, etc."
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reference Image Upload -->
+      <div class="form-section">
+        <h3>Reference Image</h3>
+        <div class="image-upload">
+          <input
+            type="file"
+            accept="image/*"
+            (change)="onImageSelected($event)"
+            id="referenceImage"
+            class="file-input"
+          />
+          <label for="referenceImage" class="file-label">
+            <span>📷 Upload Reference Image</span>
+          </label>
+          <small class="help-text"
+            >Upload the image provided by the client</small
+          >
+          <div class="image-preview" *ngIf="imagePreview">
+            <img [src]="imagePreview" alt="Reference image preview" />
+            <button
+              type="button"
+              class="remove-image"
+              (click)="imagePreview = null"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery Information -->
+      <div class="form-section">
+        <h3>Delivery Information</h3>
+        <div class="form-group">
+          <label>
+            <input
+              type="checkbox"
+              formControlName="hasDelivery"
+              class="checkbox"
+            />
+            Delivery Required
+          </label>
+        </div>
+
+        <div
+          *ngIf="orderForm.get('hasDelivery')?.value"
+          class="delivery-details"
+        >
+          <div class="form-group">
+            <label>Delivery Charge (₹) *</label>
+            <input
+              type="number"
+              formControlName="deliveryCharge"
+              class="form-control"
+              min="0"
+              step="0.01"
+              [class.invalid]="
+                orderForm.get('deliveryCharge')?.invalid &&
+                orderForm.get('deliveryCharge')?.touched
+              "
+            />
+            <small
+              class="error"
+              *ngIf="
+                orderForm.get('deliveryCharge')?.invalid &&
+                orderForm.get('deliveryCharge')?.touched
+              "
+            >
+              Delivery charge is required when delivery is selected
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Delivery Address *</label>
+            <textarea
+              formControlName="deliveryAddress"
+              class="form-control"
+              rows="3"
+              placeholder="Enter delivery address"
+              [class.invalid]="
+                orderForm.get('deliveryAddress')?.invalid &&
+                orderForm.get('deliveryAddress')?.touched
+              "
+            ></textarea>
+            <small
+              class="error"
+              *ngIf="
+                orderForm.get('deliveryAddress')?.invalid &&
+                orderForm.get('deliveryAddress')?.touched
+              "
+            >
+              Delivery address is required when delivery is selected
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Status (for editing) -->
+      <div class="form-section" *ngIf="isEditMode">
+        <h3>Order Status</h3>
+        <div class="form-group">
+          <label>Status</label>
+          <select formControlName="status" class="form-control">
+            <option value="pending">Pending</option>
+            <option value="in-progress">In Progress</option>
+            <option value="ready">Ready</option>
+            <option value="delivered">Delivered</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Delivered Image Upload -->
+      <div
+        class="form-section"
+        *ngIf="orderForm.get('status')?.value === 'delivered'"
+      >
+        <h3>Delivered Cake Image</h3>
+        <div class="image-upload">
+          <input
+            type="file"
+            accept="image/*"
+            (change)="onDeliveredImageSelected($event)"
+            id="deliveredImage"
+            class="file-input"
+          />
+          <label for="deliveredImage" class="file-label">
+            <span>📷 Upload Delivered Cake Image</span>
+          </label>
+          <small class="help-text">Upload a photo of the delivered cake</small>
+          <div class="image-preview" *ngIf="deliveredImagePreview">
+            <img [src]="deliveredImagePreview" alt="Delivered cake preview" />
+            <button
+              type="button"
+              class="remove-image"
+              (click)="deliveredImagePreview = null"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="order-summary">
+        <div class="summary-row">
+          <span>Cake Price:</span>
+          <span>₹{{ (orderForm.get("price")?.value || 0).toFixed(2) }}</span>
+        </div>
+        <div
+          class="summary-row"
+          *ngIf="(orderForm.get('additionalCharges')?.value || 0) > 0"
+        >
+          <span>Additional Charges:</span>
+          <span
+            >₹{{
+              (orderForm.get("additionalCharges")?.value || 0).toFixed(2)
+            }}</span
+          >
+        </div>
+        <div class="summary-row" *ngIf="orderForm.get('hasDelivery')?.value">
+          <span>Delivery Charge:</span>
+          <span
+            >₹{{
+              (orderForm.get("deliveryCharge")?.value || 0).toFixed(2)
+            }}</span
+          >
+        </div>
+        <div class="summary-row grand-total">
+          <span>Grand Total:</span>
+          <span>₹{{ getGrandTotal().toFixed(2) }}</span>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancel()">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="orderForm.invalid"
+        >
+          {{ isEditMode ? "Update Order" : "Create Order" }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
