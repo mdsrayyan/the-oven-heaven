@@ -58,11 +58,73 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({ 
-    success: true,
-    message: 'Apps Script is running. Use POST to sync data.' 
-  }))
-    .setMimeType(ContentService.MimeType.JSON);
+  try {
+    const action = e.parameter.action;
+    const spreadsheetId = e.parameter.spreadsheetId;
+    
+    // If no action or spreadsheetId, return test message
+    if (!action || !spreadsheetId) {
+      return ContentService.createTextOutput(JSON.stringify({ 
+        success: true,
+        message: 'Apps Script is running. Use POST to sync data or GET with action=fetch to retrieve data.' 
+      }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Handle fetch action
+    if (action === 'fetch') {
+      const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+      const result = {
+        orders: [],
+        customers: [],
+        expenses: []
+      };
+      
+      // Fetch Orders sheet
+      let sheet = spreadsheet.getSheetByName('Orders');
+      if (sheet && sheet.getLastRow() > 1) {
+        const ordersData = sheet.getDataRange().getValues();
+        result.orders = ordersData;
+      }
+      
+      // Fetch Customers sheet
+      sheet = spreadsheet.getSheetByName('Customers');
+      if (sheet && sheet.getLastRow() > 1) {
+        const customersData = sheet.getDataRange().getValues();
+        result.customers = customersData;
+      }
+      
+      // Fetch Expenses sheet
+      sheet = spreadsheet.getSheetByName('Expenses');
+      if (sheet && sheet.getLastRow() > 1) {
+        const expensesData = sheet.getDataRange().getValues();
+        result.expenses = expensesData;
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        ...result
+      }))
+        .setMimeType(ContentService.MimeType.JSON)
+        .setHeaders({
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        });
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ 
+      success: false,
+      error: 'Unknown action' 
+    }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ 
+      success: false, 
+      error: error.toString() 
+    }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 ```
 

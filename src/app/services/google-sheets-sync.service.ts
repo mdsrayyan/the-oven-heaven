@@ -91,6 +91,226 @@ export class GoogleSheetsSyncService {
     }
   }
 
+  // Fetch data from Google Sheets
+  async fetchAll(): Promise<{
+    orders: Order[];
+    customers: Customer[];
+    expenses: Expense[];
+  }> {
+    if (!this.config) {
+      throw new Error("Google Sheets sync not initialized");
+    }
+
+    try {
+      console.log("📥 Fetching data from Google Sheets...");
+
+      const response = await fetch(
+        `${
+          this.config.appsScriptUrl
+        }?action=fetch&spreadsheetId=${encodeURIComponent(
+          this.config.spreadsheetId
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch data: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Data fetched from Google Sheets:", {
+        orders: data.orders?.length || 0,
+        customers: data.customers?.length || 0,
+        expenses: data.expenses?.length || 0,
+      });
+
+      return {
+        orders: this.parseOrders(data.orders || []),
+        customers: this.parseCustomers(data.customers || []),
+        expenses: this.parseExpenses(data.expenses || []),
+      };
+    } catch (error) {
+      console.error("Error fetching data from Google Sheets:", error);
+      throw error;
+    }
+  }
+
+  // Parse orders from Google Sheets rows
+  private parseOrders(rows: string[][]): Order[] {
+    if (rows.length < 2) return []; // No data rows (only header)
+
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+
+    return dataRows
+      .map((row) => {
+        try {
+          const order: any = {};
+          headers.forEach((header, index) => {
+            const value = row[index] || "";
+            switch (header) {
+              case "id":
+                order.id = value;
+                break;
+              case "customerName":
+                order.customerName = value;
+                break;
+              case "customerPhone":
+                order.customerPhone = value || undefined;
+                break;
+              case "cakeType":
+                order.cakeType = value;
+                break;
+              case "quantity":
+                order.quantity = parseInt(value) || 1;
+                break;
+              case "price":
+                order.price = parseFloat(value) || 0;
+                break;
+              case "additionalCharges":
+                order.additionalCharges = parseFloat(value) || 0;
+                break;
+              case "deliveryCharge":
+                order.deliveryCharge = parseFloat(value) || 0;
+                break;
+              case "otherDetails":
+                order.otherDetails = value || undefined;
+                break;
+              case "cakeImage":
+                // Image stored as base64 or "Yes"/"No"
+                order.cakeImage = value === "Yes" ? "" : value || undefined;
+                break;
+              case "hasDelivery":
+                order.hasDelivery = value === "true";
+                break;
+              case "deliveryAddress":
+                order.deliveryAddress = value || undefined;
+                break;
+              case "dueDate":
+              case "deliveryDate": // Backward compatibility
+                order.dueDate = value;
+                break;
+              case "orderDate":
+                order.orderDate = value;
+                break;
+              case "status":
+                order.status = value || "pending";
+                break;
+              case "isEggless":
+                order.isEggless = value === "true";
+                break;
+            }
+          });
+
+          // Validate required fields
+          if (!order.id || !order.customerName || !order.cakeType) {
+            return null;
+          }
+
+          return order as Order;
+        } catch (error) {
+          console.warn("Error parsing order row:", error, row);
+          return null;
+        }
+      })
+      .filter((order): order is Order => order !== null);
+  }
+
+  // Parse customers from Google Sheets rows
+  private parseCustomers(rows: string[][]): Customer[] {
+    if (rows.length < 2) return [];
+
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+
+    return dataRows
+      .map((row) => {
+        try {
+          const customer: any = {};
+          headers.forEach((header, index) => {
+            const value = row[index] || "";
+            switch (header) {
+              case "id":
+                customer.id = value;
+                break;
+              case "name":
+                customer.name = value;
+                break;
+              case "phone":
+                customer.phone = value || undefined;
+                break;
+              case "email":
+                customer.email = value || undefined;
+                break;
+              case "firstOrderDate":
+                customer.firstOrderDate = value;
+                break;
+            }
+          });
+
+          if (!customer.id || !customer.name) {
+            return null;
+          }
+
+          return customer as Customer;
+        } catch (error) {
+          console.warn("Error parsing customer row:", error, row);
+          return null;
+        }
+      })
+      .filter((customer): customer is Customer => customer !== null);
+  }
+
+  // Parse expenses from Google Sheets rows
+  private parseExpenses(rows: string[][]): Expense[] {
+    if (rows.length < 2) return [];
+
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+
+    return dataRows
+      .map((row) => {
+        try {
+          const expense: any = {};
+          headers.forEach((header, index) => {
+            const value = row[index] || "";
+            switch (header) {
+              case "id":
+                expense.id = value;
+                break;
+              case "description":
+                expense.description = value;
+                break;
+              case "amount":
+                expense.amount = parseFloat(value) || 0;
+                break;
+              case "date":
+                expense.date = value;
+                break;
+              case "category":
+                expense.category = value || "";
+                break;
+            }
+          });
+
+          if (!expense.id || !expense.description) {
+            return null;
+          }
+
+          return expense as Expense;
+        } catch (error) {
+          console.warn("Error parsing expense row:", error, row);
+          return null;
+        }
+      })
+      .filter((expense): expense is Expense => expense !== null);
+  }
+
   // Private helper methods
   private async writeToSheet(
     sheetName: string,
@@ -166,11 +386,11 @@ export class GoogleSheetsSyncService {
     const additionalCharges = order.additionalCharges || 0;
     const deliveryCharge = order.deliveryCharge || 0;
     const grandTotal = order.price + additionalCharges + deliveryCharge;
-    
+
     // Handle backward compatibility for old orders without dueDate
     const oldOrder = order as any;
     const dueDate = order.dueDate || oldOrder.deliveryDate || "";
-    
+
     return [
       order.id || "",
       order.customerName || "",

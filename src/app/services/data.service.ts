@@ -22,10 +22,15 @@ export class DataService {
   expenses$: Observable<Expense[]> = this.expensesSubject.asObservable();
 
   constructor(private googleSheetsSync: GoogleSheetsSyncService) {
-    this.initialize();
+    // Initialize asynchronously
+    this.initialize().catch((error) => {
+      console.error("Failed to initialize DataService:", error);
+      // Fallback to localStorage only
+      this.loadFromLocalStorage();
+    });
   }
 
-  private initialize(): void {
+  private async initialize(): Promise<void> {
     console.log("🔧 Initializing DataService...");
     console.log("Google Sheets config:", {
       enabled: environment.googleSheets?.enabled,
@@ -51,6 +56,48 @@ export class DataService {
         appsScriptUrl:
           environment.googleSheets.appsScriptUrl.substring(0, 50) + "...",
       });
+
+      // Try to fetch data from Google Sheets first
+      try {
+        console.log("📥 Attempting to fetch data from Google Sheets...");
+        const fetchedData = await this.googleSheetsSync.fetchAll();
+
+        if (
+          fetchedData.orders.length > 0 ||
+          fetchedData.customers.length > 0 ||
+          fetchedData.expenses.length > 0
+        ) {
+          console.log("✅ Loaded data from Google Sheets:", {
+            orders: fetchedData.orders.length,
+            customers: fetchedData.customers.length,
+            expenses: fetchedData.expenses.length,
+          });
+
+          // Update subjects with fetched data
+          this.ordersSubject.next(fetchedData.orders);
+          this.customersSubject.next(fetchedData.customers);
+          this.expensesSubject.next(fetchedData.expenses);
+
+          // Save to localStorage as backup
+          this.saveToLocalStorage(
+            fetchedData.orders,
+            fetchedData.customers,
+            fetchedData.expenses
+          );
+
+          return; // Successfully loaded from Google Sheets
+        } else {
+          console.log(
+            "ℹ️ Google Sheets is empty, falling back to localStorage"
+          );
+        }
+      } catch (error) {
+        console.warn(
+          "⚠️ Failed to fetch from Google Sheets, falling back to localStorage:",
+          error
+        );
+        // Continue to load from localStorage
+      }
     } else {
       console.log("⚠️ Google Sheets sync is disabled or not configured");
       if (!environment.googleSheets?.enabled) {
@@ -64,7 +111,7 @@ export class DataService {
       }
     }
 
-    // Load from localStorage
+    // Load from localStorage (fallback or if Google Sheets is disabled)
     this.loadFromLocalStorage();
   }
 
@@ -73,9 +120,25 @@ export class DataService {
     const customers = this.getCustomersFromStorage();
     const expenses = this.getExpensesFromStorage();
 
+    console.log("📦 Loaded data from localStorage:", {
+      orders: orders.length,
+      customers: customers.length,
+      expenses: expenses.length,
+    });
+
     this.ordersSubject.next(orders);
     this.customersSubject.next(customers);
     this.expensesSubject.next(expenses);
+  }
+
+  private saveToLocalStorage(
+    orders: Order[],
+    customers: Customer[],
+    expenses: Expense[]
+  ): void {
+    localStorage.setItem(this.ordersKey, JSON.stringify(orders));
+    localStorage.setItem(this.customersKey, JSON.stringify(customers));
+    localStorage.setItem(this.expensesKey, JSON.stringify(expenses));
   }
 
   private saveAllData(): void {
