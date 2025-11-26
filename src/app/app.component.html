@@ -12,6 +12,12 @@
     </div>
   </nav>
   <main class="main-content">
+    <div class="loader-overlay" *ngIf="loading$ | async">
+      <div class="loader">
+        <div class="loader-spinner"></div>
+        <p>Loading data...</p>
+      </div>
+    </div>
     <router-outlet></router-outlet>
   </main>
 </div>

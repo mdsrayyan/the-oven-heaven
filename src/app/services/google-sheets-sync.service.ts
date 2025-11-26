@@ -178,8 +178,12 @@ export class GoogleSheetsSyncService {
                 order.otherDetails = value || undefined;
                 break;
               case "cakeImage":
-                // Image stored as base64 or "Yes"/"No"
-                order.cakeImage = value === "Yes" ? "" : value || undefined;
+                // Image stored as base64 string
+                order.cakeImage = value && value !== "No" && value !== "Yes" ? value : undefined;
+                break;
+              case "deliveredImage":
+                // Delivered image stored as base64 string
+                order.deliveredImage = value && value !== "No" && value !== "Yes" ? value : undefined;
                 break;
               case "hasDelivery":
                 order.hasDelivery = value === "true";
@@ -369,6 +373,7 @@ export class GoogleSheetsSyncService {
       "grandTotal",
       "otherDetails",
       "cakeImage",
+      "deliveredImage",
       "hasDelivery",
       "deliveryAddress",
       "dueDate",
@@ -387,6 +392,11 @@ export class GoogleSheetsSyncService {
     const oldOrder = order as any;
     const dueDate = order.dueDate || oldOrder.deliveryDate || "";
 
+    // Store base64 images - truncate if too long for Google Sheets (50k char limit)
+    const cakeImage = order.cakeImage || "";
+    const deliveredImage = order.deliveredImage || "";
+    const maxImageLength = 45000; // Leave some buffer under 50k limit
+    
     return [
       order.id || "",
       order.customerName || "",
@@ -398,7 +408,8 @@ export class GoogleSheetsSyncService {
       String(deliveryCharge),
       String(grandTotal),
       order.otherDetails || "",
-      order.cakeImage ? "Yes" : "No", // Store as Yes/No instead of full base64
+      cakeImage.length > maxImageLength ? cakeImage.substring(0, maxImageLength) : cakeImage,
+      deliveredImage.length > maxImageLength ? deliveredImage.substring(0, maxImageLength) : deliveredImage,
       String(order.hasDelivery || false),
       order.deliveryAddress || "",
       dueDate,

@@ -16,10 +16,12 @@ export class DataService {
   private ordersSubject = new BehaviorSubject<Order[]>([]);
   private customersSubject = new BehaviorSubject<Customer[]>([]);
   private expensesSubject = new BehaviorSubject<Expense[]>([]);
+  private loadingSubject = new BehaviorSubject<boolean>(true);
 
   orders$: Observable<Order[]> = this.ordersSubject.asObservable();
   customers$: Observable<Customer[]> = this.customersSubject.asObservable();
   expenses$: Observable<Expense[]> = this.expensesSubject.asObservable();
+  loading$: Observable<boolean> = this.loadingSubject.asObservable();
 
   constructor(private googleSheetsSync: GoogleSheetsSyncService) {
     // Initialize asynchronously
@@ -31,6 +33,8 @@ export class DataService {
   }
 
   private async initialize(): Promise<void> {
+    this.loadingSubject.next(true);
+
     console.log("🔧 Initializing DataService...");
     console.log("Google Sheets config:", {
       enabled: environment.googleSheets?.enabled,
@@ -85,6 +89,7 @@ export class DataService {
             fetchedData.expenses
           );
 
+          this.loadingSubject.next(false);
           return; // Successfully loaded from Google Sheets
         } else {
           console.log(
@@ -113,6 +118,7 @@ export class DataService {
 
     // Load from localStorage (fallback or if Google Sheets is disabled)
     this.loadFromLocalStorage();
+    this.loadingSubject.next(false);
   }
 
   private loadFromLocalStorage(): void {
