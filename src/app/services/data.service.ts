@@ -8,9 +8,6 @@ import { environment } from "../../environments/environment";
   providedIn: "root",
 })
 export class DataService {
-  private ordersKey = "bakery_orders";
-  private customersKey = "bakery_customers";
-  private expensesKey = "bakery_expenses";
   private googleSheetsEnabled = false;
 
   private ordersSubject = new BehaviorSubject<Order[]>([]);
@@ -27,8 +24,11 @@ export class DataService {
     // Initialize asynchronously
     this.initialize().catch((error) => {
       console.error("Failed to initialize DataService:", error);
-      // Fallback to localStorage only
-      this.loadFromLocalStorage();
+      this.loadingSubject.next(false);
+      // Show empty state if initialization fails
+      this.ordersSubject.next([]);
+      this.customersSubject.next([]);
+      this.expensesSubject.next([]);
     });
   }
 
@@ -42,143 +42,64 @@ export class DataService {
       hasAppsScriptUrl: !!environment.googleSheets?.appsScriptUrl,
     });
 
-    // Initialize Google Sheets sync if configured
+    // Google Sheets is required
     if (
-      environment.googleSheets?.enabled &&
-      environment.googleSheets.spreadsheetId &&
-      environment.googleSheets.appsScriptUrl
+      !environment.googleSheets?.enabled ||
+      !environment.googleSheets.spreadsheetId ||
+      !environment.googleSheets.appsScriptUrl
     ) {
-      console.log("✅ Google Sheets sync enabled");
-      this.googleSheetsSync.initialize({
-        spreadsheetId: environment.googleSheets.spreadsheetId,
-        appsScriptUrl: environment.googleSheets.appsScriptUrl,
-      });
-      this.googleSheetsEnabled = true;
-      console.log("📊 Google Sheets sync initialized with:", {
-        spreadsheetId:
-          environment.googleSheets.spreadsheetId.substring(0, 20) + "...",
-        appsScriptUrl:
-          environment.googleSheets.appsScriptUrl.substring(0, 50) + "...",
-      });
-
-      // Try to fetch data from Google Sheets first
-      try {
-        console.log("📥 Attempting to fetch data from Google Sheets...");
-        const fetchedData = await this.googleSheetsSync.fetchAll();
-
-        if (
-          fetchedData.orders.length > 0 ||
-          fetchedData.customers.length > 0 ||
-          fetchedData.expenses.length > 0
-        ) {
-          console.log("✅ Loaded data from Google Sheets:", {
-            orders: fetchedData.orders.length,
-            customers: fetchedData.customers.length,
-            expenses: fetchedData.expenses.length,
-          });
-
-          // Images are now stored in Google Sheets (compressed), so use fetched data directly
-          // Merge with localStorage only if Google Sheets images are missing
-          const ordersWithImages = this.mergeImagesIfMissing(
-            fetchedData.orders
-          );
-
-          // Update subjects with fetched data
-          this.ordersSubject.next(ordersWithImages);
-          this.customersSubject.next(fetchedData.customers);
-          this.expensesSubject.next(fetchedData.expenses);
-
-          // Save to localStorage (including images)
-          this.saveToLocalStorage(
-            ordersWithImages,
-            fetchedData.customers,
-            fetchedData.expenses
-          );
-
-          this.loadingSubject.next(false);
-          return; // Successfully loaded from Google Sheets
-        } else {
-          console.log(
-            "ℹ️ Google Sheets is empty, falling back to localStorage"
-          );
-        }
-      } catch (error) {
-        console.warn(
-          "⚠️ Failed to fetch from Google Sheets, falling back to localStorage:",
-          error
-        );
-        // Continue to load from localStorage
-      }
-    } else {
-      console.log("⚠️ Google Sheets sync is disabled or not configured");
+      console.error("❌ Google Sheets is not properly configured");
       if (!environment.googleSheets?.enabled) {
-        console.log("   Reason: enabled is false");
+        console.error("   Reason: enabled is false");
       }
       if (!environment.googleSheets?.spreadsheetId) {
-        console.log("   Reason: spreadsheetId is missing");
+        console.error("   Reason: spreadsheetId is missing");
       }
       if (!environment.googleSheets?.appsScriptUrl) {
-        console.log("   Reason: appsScriptUrl is missing");
+        console.error("   Reason: appsScriptUrl is missing");
       }
+      this.loadingSubject.next(false);
+      return;
     }
 
-    // Load from localStorage (fallback or if Google Sheets is disabled)
-    this.loadFromLocalStorage();
-    this.loadingSubject.next(false);
-  }
-
-  private loadFromLocalStorage(): void {
-    const orders = this.getOrdersFromStorage();
-    const customers = this.getCustomersFromStorage();
-    const expenses = this.getExpensesFromStorage();
-
-    console.log("📦 Loaded data from localStorage:", {
-      orders: orders.length,
-      customers: customers.length,
-      expenses: expenses.length,
+    console.log("✅ Google Sheets sync enabled");
+    this.googleSheetsSync.initialize({
+      spreadsheetId: environment.googleSheets.spreadsheetId,
+      appsScriptUrl: environment.googleSheets.appsScriptUrl,
+    });
+    this.googleSheetsEnabled = true;
+    console.log("📊 Google Sheets sync initialized with:", {
+      spreadsheetId:
+        environment.googleSheets.spreadsheetId.substring(0, 20) + "...",
+      appsScriptUrl:
+        environment.googleSheets.appsScriptUrl.substring(0, 50) + "...",
     });
 
-    this.ordersSubject.next(orders);
-    this.customersSubject.next(customers);
-    this.expensesSubject.next(expenses);
-  }
+    // Fetch data from Google Sheets
+    try {
+      console.log("📥 Fetching data from Google Sheets...");
+      const fetchedData = await this.googleSheetsSync.fetchAll();
 
-  private saveToLocalStorage(
-    orders: Order[],
-    customers: Customer[],
-    expenses: Expense[]
-  ): void {
-    localStorage.setItem(this.ordersKey, JSON.stringify(orders));
-    localStorage.setItem(this.customersKey, JSON.stringify(customers));
-    localStorage.setItem(this.expensesKey, JSON.stringify(expenses));
-  }
+      console.log("✅ Loaded data from Google Sheets:", {
+        orders: fetchedData.orders.length,
+        customers: fetchedData.customers.length,
+        expenses: fetchedData.expenses.length,
+      });
 
-  /**
-   * Merge images from localStorage only if they're missing from Google Sheets
-   * This ensures images sync across devices while preserving local images as fallback
-   */
-  private mergeImagesIfMissing(orders: Order[]): Order[] {
-    // Get local orders with images
-    const localOrders = this.getOrdersFromStorage();
-    const localOrdersMap = new Map<string, Order>();
+      // Update subjects with fetched data
+      this.ordersSubject.next(fetchedData.orders);
+      this.customersSubject.next(fetchedData.customers);
+      this.expensesSubject.next(fetchedData.expenses);
 
-    localOrders.forEach((order) => {
-      localOrdersMap.set(order.id, order);
-    });
-
-    // Merge images from local storage only if Google Sheets doesn't have them
-    return orders.map((order) => {
-      const localOrder = localOrdersMap.get(order.id);
-      if (localOrder) {
-        // Use Google Sheets image if available, otherwise use local storage
-        return {
-          ...order,
-          cakeImage: order.cakeImage || localOrder.cakeImage,
-          deliveredImage: order.deliveredImage || localOrder.deliveredImage,
-        };
-      }
-      return order;
-    });
+      this.loadingSubject.next(false);
+    } catch (error) {
+      console.error("❌ Failed to fetch from Google Sheets:", error);
+      this.loadingSubject.next(false);
+      // Show empty state on error
+      this.ordersSubject.next([]);
+      this.customersSubject.next([]);
+      this.expensesSubject.next([]);
+    }
   }
 
   private saveAllData(): void {
@@ -186,12 +107,7 @@ export class DataService {
     const customers = this.customersSubject.value;
     const expenses = this.expensesSubject.value;
 
-    // Save to localStorage
-    localStorage.setItem(this.ordersKey, JSON.stringify(orders));
-    localStorage.setItem(this.customersKey, JSON.stringify(customers));
-    localStorage.setItem(this.expensesKey, JSON.stringify(expenses));
-
-    // Sync to Google Sheets if enabled
+    // Sync to Google Sheets
     if (this.googleSheetsEnabled) {
       console.log("Syncing to Google Sheets...", {
         orders: orders.length,
@@ -205,28 +121,21 @@ export class DataService {
           console.log("✅ Google Sheets sync completed successfully");
         })
         .catch((error) => {
-          // Log error but don't block the save operation
-          console.error(
-            "❌ Google Sheets sync failed (data still saved locally):",
-            error
-          );
+          console.error("❌ Google Sheets sync failed:", error);
           if (error.message) {
             console.error("Error details:", error.message);
           }
         });
     } else {
-      console.log("Google Sheets sync is disabled");
+      console.error(
+        "❌ Google Sheets sync is not enabled - data cannot be saved"
+      );
     }
   }
 
   // Orders
   getOrders(): Order[] {
     return this.ordersSubject.value;
-  }
-
-  private getOrdersFromStorage(): Order[] {
-    const data = localStorage.getItem(this.ordersKey);
-    return data ? JSON.parse(data) : [];
   }
 
   async addOrder(order: Order): Promise<void> {
@@ -265,11 +174,6 @@ export class DataService {
     return this.customersSubject.value;
   }
 
-  private getCustomersFromStorage(): Customer[] {
-    const data = localStorage.getItem(this.customersKey);
-    return data ? JSON.parse(data) : [];
-  }
-
   private async updateCustomer(order: Order): Promise<void> {
     const customers = this.getCustomers();
     const existingCustomer = customers.find(
@@ -294,11 +198,6 @@ export class DataService {
   // Expenses
   getExpenses(): Expense[] {
     return this.expensesSubject.value;
-  }
-
-  private getExpensesFromStorage(): Expense[] {
-    const data = localStorage.getItem(this.expensesKey);
-    return data ? JSON.parse(data) : [];
   }
 
   async addExpense(expense: Expense): Promise<void> {
