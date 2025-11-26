@@ -104,19 +104,15 @@ export class GoogleSheetsSyncService {
     try {
       console.log("📥 Fetching data from Google Sheets...");
 
-      const response = await fetch(
-        `${
-          this.config.appsScriptUrl
-        }?action=fetch&spreadsheetId=${encodeURIComponent(
-          this.config.spreadsheetId
-        )}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // Don't include Content-Type header for GET requests to avoid CORS preflight
+      const url = `${this.config.appsScriptUrl}?action=fetch&spreadsheetId=${encodeURIComponent(
+        this.config.spreadsheetId
+      )}`;
+      
+      const response = await fetch(url, {
+        method: "GET",
+        // No custom headers to avoid CORS preflight
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch data: ${response.statusText}`);

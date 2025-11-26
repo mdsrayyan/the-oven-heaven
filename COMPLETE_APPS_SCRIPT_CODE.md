@@ -105,12 +105,7 @@ function doGet(e) {
         success: true,
         ...result
       }))
-        .setMimeType(ContentService.MimeType.JSON)
-        .setHeaders({
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        });
+        .setMimeType(ContentService.MimeType.JSON);
     }
     
     return ContentService.createTextOutput(JSON.stringify({ 
@@ -125,6 +120,12 @@ function doGet(e) {
     }))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+function doOptions(e) {
+  // Handle CORS preflight requests
+  return ContentService.createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT);
 }
 ```
 
