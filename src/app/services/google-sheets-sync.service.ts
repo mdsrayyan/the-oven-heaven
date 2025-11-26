@@ -138,6 +138,21 @@ export class GoogleSheetsSyncService {
     }
   }
 
+  /**
+   * Parse boolean value from Google Sheets
+   * Handles various formats: "true", "TRUE", "True", "1", true, etc.
+   */
+  private parseBoolean(value: string | boolean | number): boolean {
+    if (typeof value === "boolean") {
+      return value;
+    }
+    if (typeof value === "number") {
+      return value === 1;
+    }
+    const str = String(value).toLowerCase().trim();
+    return str === "true" || str === "1" || str === "yes";
+  }
+
   // Parse orders from Google Sheets rows
   private parseOrders(rows: string[][]): Order[] {
     if (rows.length < 2) return []; // No data rows (only header)
@@ -202,7 +217,7 @@ export class GoogleSheetsSyncService {
                 }
                 break;
               case "hasDelivery":
-                order.hasDelivery = value === "true";
+                order.hasDelivery = this.parseBoolean(value);
                 break;
               case "deliveryAddress":
                 order.deliveryAddress = value || undefined;
@@ -218,7 +233,7 @@ export class GoogleSheetsSyncService {
                 order.status = value || "pending";
                 break;
               case "isEggless":
-                order.isEggless = value === "true";
+                order.isEggless = this.parseBoolean(value);
                 break;
             }
           });
