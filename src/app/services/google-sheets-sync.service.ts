@@ -180,7 +180,7 @@ export class GoogleSheetsSyncService {
                 order.otherDetails = value || undefined;
                 break;
               case "cakeImage":
-                // Store compressed base64 image (if not empty and not "Yes"/"No")
+                // Store image URL (if not empty and not "Yes"/"No")
                 if (
                   value &&
                   value !== "No" &&
@@ -191,7 +191,7 @@ export class GoogleSheetsSyncService {
                 }
                 break;
               case "deliveredImage":
-                // Store compressed base64 image (if not empty and not "Yes"/"No")
+                // Store image URL (if not empty and not "Yes"/"No")
                 if (
                   value &&
                   value !== "No" &&
@@ -408,10 +408,9 @@ export class GoogleSheetsSyncService {
     const oldOrder = order as any;
     const dueDate = order.dueDate || oldOrder.deliveryDate || "";
 
-    // Store compressed base64 images (compressed to fit Google Sheets 50k limit)
+    // Store image URLs (no size limit concerns with URLs)
     const cakeImage = order.cakeImage || "";
     const deliveredImage = order.deliveredImage || "";
-    const maxLength = 45000; // Leave buffer under 50k limit
 
     return [
       order.id || "",
@@ -424,12 +423,8 @@ export class GoogleSheetsSyncService {
       String(deliveryCharge),
       String(grandTotal),
       order.otherDetails || "",
-      cakeImage.length > maxLength
-        ? cakeImage.substring(0, maxLength)
-        : cakeImage,
-      deliveredImage.length > maxLength
-        ? deliveredImage.substring(0, maxLength)
-        : deliveredImage,
+      cakeImage,
+      deliveredImage,
       String(order.hasDelivery || false),
       order.deliveryAddress || "",
       dueDate,

@@ -2,7 +2,7 @@ import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, Router } from "@angular/router";
 import { DataService } from "../../services/data.service";
-import { GoogleDriveService } from "../../services/google-drive.service";
+import { ImageProxyService } from "../../services/image-proxy.service";
 import { Order } from "../../models/order.model";
 
 @Component({
@@ -20,7 +20,7 @@ export class OrderDetailsComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private dataService: DataService,
-    private googleDrive: GoogleDriveService
+    private imageProxy: ImageProxyService
   ) {}
 
   ngOnInit(): void {
@@ -85,8 +85,15 @@ export class OrderDetailsComponent implements OnInit {
     this.router.navigate(["/orders"]);
   }
 
-  getImageUrl(imageValue: string | undefined): string {
-    if (!imageValue) return "";
-    return this.googleDrive.getImageUrl(imageValue);
+  hideImage(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      img.style.display = "none";
+    }
+  }
+
+  getImageUrl(url: string | undefined): string {
+    if (!url) return "";
+    return this.imageProxy.getProxiedUrl(url);
   }
 }

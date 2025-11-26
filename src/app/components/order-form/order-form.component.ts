@@ -2,9 +2,7 @@ import { Component, OnInit } from "@angular/core";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { DataService } from "../../services/data.service";
-import { ImageCompressionService } from "../../services/image-compression.service";
-import { GoogleDriveService } from "../../services/google-drive.service";
-import { environment } from "../../../environments/environment";
+import { ImageProxyService } from "../../services/image-proxy.service";
 import { Order } from "../../models/order.model";
 
 @Component({
@@ -16,16 +14,19 @@ export class OrderFormComponent implements OnInit {
   orderForm: FormGroup;
   isEditMode = false;
   orderId: string | null = null;
-  imagePreview: string | null = null;
-  deliveredImagePreview: string | null = null;
+  imagePreview: string | null = null; // Proxied URL for preview
+  deliveredImagePreview: string | null = null; // Proxied URL for preview
+  originalImageUrl: string | null = null; // Original URL for storage
+  originalDeliveredImageUrl: string | null = null; // Original URL for storage
+  imageError: string | null = null;
+  deliveredImageError: string | null = null;
 
   constructor(
     private fb: FormBuilder,
     private dataService: DataService,
     private router: Router,
     private route: ActivatedRoute,
-    private imageCompression: ImageCompressionService,
-    private googleDrive: GoogleDriveService
+    private imageProxy: ImageProxyService
   ) {
     this.orderForm = this.fb.group({
       customerName: ["", Validators.required],
@@ -48,18 +49,6 @@ export class OrderFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Initialize Google Drive if enabled
-    if (
-      environment.googleDrive?.enabled &&
-      environment.googleDrive?.folderId &&
-      environment.googleSheets?.appsScriptUrl
-    ) {
-      this.googleDrive.initialize({
-        appsScriptUrl: environment.googleSheets.appsScriptUrl,
-        folderId: environment.googleDrive.folderId,
-      });
-    }
-
     this.route.params.subscribe((params) => {
       if (params["id"]) {
         this.isEditMode = true;
@@ -115,89 +104,76 @@ export class OrderFormComponent implements OnInit {
         status: order.status || "pending",
       });
       if (order.cakeImage) {
-        this.imagePreview = order.cakeImage;
+        // Store original URL
+        this.originalImageUrl = order.cakeImage;
+        // Use proxy for preview to avoid CORS issues
+        this.imagePreview = this.imageProxy.getProxiedUrl(order.cakeImage);
       }
       if (order.deliveredImage) {
-        this.deliveredImagePreview = order.deliveredImage;
+        // Store original URL
+        this.originalDeliveredImageUrl = order.deliveredImage;
+        // Use proxy for preview to avoid CORS issues
+        this.deliveredImagePreview = this.imageProxy.getProxiedUrl(
+          order.deliveredImage
+        );
       }
     }
   }
 
-  async onImageSelected(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
+  onImageUrlChange(url: string): void {
+    this.imageError = null;
+    if (url && url.trim()) {
+      // Validate URL format
       try {
-        // Compress image first
-        const compressedBase64 = await this.imageCompression.compressImage(
-          file,
-          800,
-          800,
-          0.7
-        );
-        console.log("✅ Image compressed successfully");
-
-        // Show preview immediately
-        this.imagePreview = compressedBase64;
-
-        // Upload to Google Drive if enabled
-        if (
-          environment.googleDrive?.enabled &&
-          environment.googleDrive?.folderId &&
-          this.googleDrive.isInitialized()
-        ) {
-          try {
-            const fileName = `order_${Date.now()}_reference.jpg`;
-            const driveFileId = await this.googleDrive.uploadImage(
-              compressedBase64,
-              fileName
-            );
-            // Store Drive file ID instead of base64
-            this.imagePreview = driveFileId;
-            console.log("✅ Image uploaded to Google Drive:", driveFileId);
-          } catch (driveError) {
-            console.warn(
-              "⚠️ Failed to upload to Drive, using base64:",
-              driveError
-            );
-            // Keep base64 as fallback
-          }
-        }
+        new URL(url);
+        // Store original URL
+        this.originalImageUrl = url;
+        // Use proxy to bypass CORS issues for preview
+        this.imagePreview = this.imageProxy.getProxiedUrl(url);
       } catch (error) {
-        console.error("Error compressing image:", error);
-        // Fallback to original if compression fails
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.imagePreview = e.target?.result as string;
-        };
-        reader.readAsDataURL(file);
+        this.imageError =
+          "Invalid URL format. Please enter a valid image URL (e.g., https://example.com/image.jpg)";
+        this.imagePreview = null;
+        this.originalImageUrl = null;
       }
+    } else {
+      this.imagePreview = null;
+      this.originalImageUrl = null;
     }
   }
 
-  async onDeliveredImageSelected(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
+  onImageError(): void {
+    this.imageError =
+      "Failed to load image. The image may be blocked by CORS or the URL may be incorrect.";
+    this.imagePreview = null;
+  }
+
+  onDeliveredImageUrlChange(url: string): void {
+    this.deliveredImageError = null;
+    if (url && url.trim()) {
+      // Validate URL format
       try {
-        // Compress image before storing
-        this.deliveredImagePreview = await this.imageCompression.compressImage(
-          file,
-          800,
-          800,
-          0.7
-        );
-        console.log("✅ Delivered image compressed successfully");
+        new URL(url);
+        // Store original URL
+        this.originalDeliveredImageUrl = url;
+        // Use proxy to bypass CORS issues for preview
+        this.deliveredImagePreview = this.imageProxy.getProxiedUrl(url);
       } catch (error) {
-        console.error("Error compressing image:", error);
-        // Fallback to original if compression fails
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.deliveredImagePreview = e.target?.result as string;
-        };
-        reader.readAsDataURL(file);
+        this.deliveredImageError =
+          "Invalid URL format. Please enter a valid image URL (e.g., https://example.com/image.jpg)";
+        this.deliveredImagePreview = null;
+        this.originalDeliveredImageUrl = null;
       }
+    } else {
+      this.deliveredImagePreview = null;
+      this.originalDeliveredImageUrl = null;
     }
+  }
+
+  onDeliveredImageError(): void {
+    this.deliveredImageError =
+      "Failed to load image. The image may be blocked by CORS or the URL may be incorrect.";
+    this.deliveredImagePreview = null;
   }
 
   async onSubmit(): Promise<void> {
@@ -215,8 +191,9 @@ export class OrderFormComponent implements OnInit {
           ? formValue.deliveryCharge || 0
           : 0,
         otherDetails: formValue.otherDetails,
-        cakeImage: this.imagePreview || undefined,
-        deliveredImage: this.deliveredImagePreview || undefined,
+        // Store original URL, not proxied URL
+        cakeImage: this.originalImageUrl || undefined,
+        deliveredImage: this.originalDeliveredImageUrl || undefined,
         hasDelivery: formValue.hasDelivery,
         deliveryAddress: formValue.hasDelivery
           ? formValue.deliveryAddress

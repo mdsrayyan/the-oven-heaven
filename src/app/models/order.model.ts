@@ -8,8 +8,8 @@ export interface Order {
   additionalCharges: number; // Additional charges (candles, toppers, middle stand, etc.)
   deliveryCharge: number; // Delivery charge amount
   otherDetails?: string;
-  cakeImage?: string; // Base64 encoded reference image (from client)
-  deliveredImage?: string; // Base64 encoded delivered cake image
+  cakeImage?: string; // URL of reference image (from client)
+  deliveredImage?: string; // URL of delivered cake image
   hasDelivery: boolean;
   deliveryAddress?: string;
   dueDate: string; // Due date for the order (applies to whole order)

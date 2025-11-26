@@ -198,29 +198,34 @@
         </div>
       </div>
 
-      <!-- Reference Image Upload -->
+      <!-- Reference Image URL -->
       <div class="form-section">
         <h3>Reference Image</h3>
-        <div class="image-upload">
+        <div class="form-group">
+          <label>Image URL</label>
           <input
-            type="file"
-            accept="image/*"
-            (change)="onImageSelected($event)"
-            id="referenceImage"
-            class="file-input"
+            type="url"
+            class="form-control"
+            placeholder="https://example.com/image.jpg"
+            [value]="imagePreview"
+            (input)="onImageUrlChange($any($event.target).value)"
           />
-          <label for="referenceImage" class="file-label">
-            <span>📷 Upload Reference Image</span>
-          </label>
           <small class="help-text"
-            >Upload the image provided by the client</small
+            >Enter the URL of the reference image provided by the client</small
           >
-          <div class="image-preview" *ngIf="imagePreview">
-            <img [src]="imagePreview" alt="Reference image preview" />
+          <small class="error" *ngIf="imageError">{{ imageError }}</small>
+          <div class="image-preview" *ngIf="imagePreview && !imageError">
+            <img
+              [src]="imagePreview"
+              alt="Reference image preview"
+              (error)="onImageError()"
+            />
             <button
               type="button"
               class="remove-image"
-              (click)="imagePreview = null"
+              (click)="
+                imagePreview = null; originalImageUrl = null; imageError = null
+              "
             >
               ×
             </button>
@@ -309,30 +314,44 @@
         </div>
       </div>
 
-      <!-- Delivered Image Upload -->
+      <!-- Delivered Image URL -->
       <div
         class="form-section"
         *ngIf="orderForm.get('status')?.value === 'delivered'"
       >
         <h3>Delivered Cake Image</h3>
-        <div class="image-upload">
+        <div class="form-group">
+          <label>Image URL</label>
           <input
-            type="file"
-            accept="image/*"
-            (change)="onDeliveredImageSelected($event)"
-            id="deliveredImage"
-            class="file-input"
+            type="url"
+            class="form-control"
+            placeholder="https://example.com/delivered-cake.jpg"
+            [value]="deliveredImagePreview"
+            (input)="onDeliveredImageUrlChange($any($event.target).value)"
           />
-          <label for="deliveredImage" class="file-label">
-            <span>📷 Upload Delivered Cake Image</span>
-          </label>
-          <small class="help-text">Upload a photo of the delivered cake</small>
-          <div class="image-preview" *ngIf="deliveredImagePreview">
-            <img [src]="deliveredImagePreview" alt="Delivered cake preview" />
+          <small class="help-text"
+            >Enter the URL of the delivered cake photo</small
+          >
+          <small class="error" *ngIf="deliveredImageError">{{
+            deliveredImageError
+          }}</small>
+          <div
+            class="image-preview"
+            *ngIf="deliveredImagePreview && !deliveredImageError"
+          >
+            <img
+              [src]="deliveredImagePreview"
+              alt="Delivered cake preview"
+              (error)="onDeliveredImageError()"
+            />
             <button
               type="button"
               class="remove-image"
-              (click)="deliveredImagePreview = null"
+              (click)="
+                deliveredImagePreview = null;
+                originalDeliveredImageUrl = null;
+                deliveredImageError = null
+              "
             >
               ×
             </button>

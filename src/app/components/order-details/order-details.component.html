@@ -27,6 +27,7 @@
         <img
           [src]="getImageUrl(order.deliveredImage || order.cakeImage)"
           [alt]="order.cakeType"
+          (error)="hideImage($event)"
         />
         <div class="image-label" *ngIf="order.deliveredImage">
           <span class="delivered-badge">Delivered</span>
@@ -87,6 +88,14 @@
         </div>
       </div>
 
+      <div class="detail-section" *ngIf="order.hasDelivery">
+        <h3>Delivery Information</h3>
+        <div class="detail-item">
+          <span class="label">Delivery Address:</span>
+          <span class="value">{{ order.deliveryAddress }}</span>
+        </div>
+      </div>
+
       <div class="detail-section">
         <h3>Pricing</h3>
         <div class="detail-item">
@@ -109,14 +118,6 @@
         <div class="detail-item grand-total">
           <span class="label">Grand Total:</span>
           <span class="value">₹{{ getGrandTotal().toFixed(2) }}</span>
-        </div>
-      </div>
-
-      <div class="detail-section" *ngIf="order.hasDelivery">
-        <h3>Delivery Information</h3>
-        <div class="detail-item">
-          <span class="label">Delivery Address:</span>
-          <span class="value">{{ order.deliveryAddress }}</span>
         </div>
       </div>
     </div>
